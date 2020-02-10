@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import React, { Component } from 'react';
+import React from 'react';
 import Ratings from 'react-ratings-declarative';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -28,17 +28,32 @@ const Author = styled.div`
   color: #555555;
 `;
 
+const TruncatedName = styled.p`
+  white-space: nowrap;
+  width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const GridList = styled.div`
   flex-wrap: wrap;
   flex-direction: row;
   text-align: center;
 `;
 
-class SkillCardGrid extends Component {
-  loadSkillCards = () => {
+const Container = styled.div`
+  margin-top: 20px;
+  margin-bottom: 40px;
+  text-align: center;
+  font-size: 0.1px;
+  width: 100%;
+`;
+
+const SkillCardGrid = props => {
+  const loadSkillCards = () => {
     let cards = [];
-    Object.keys(this.props.skills).forEach(el => {
-      let skill = this.props.skills[el];
+    Object.keys(props.skills).forEach(el => {
+      let skill = props.skills[el];
       const dataId = `index-${el}`;
       const skillPathname = `/${skill.group}/${skill.skillTag}/${skill.language}`;
       const skillFeedbackPathname = `${skillPathname}/feedbacks`;
@@ -93,7 +108,7 @@ class SkillCardGrid extends Component {
         authorName = skill.author;
       }
       cards.push(
-        <Card grid={true} key={el}>
+        <Card grid={1} key={`i${el}`}>
           <ImageContainer key={el}>
             <Link
               key={el}
@@ -110,7 +125,7 @@ class SkillCardGrid extends Component {
             {examples ? (
               <SkillExampleBubble
                 data={examples}
-                history={this.props.history}
+                history={props.history}
                 margin="1.5% 0.85% 1.5% 4%"
               />
             ) : null}
@@ -120,7 +135,7 @@ class SkillCardGrid extends Component {
             {staffPick && <StaffPickImage />}
           </TitleContainer>
           <Author>
-            <p>{authorName}</p>
+            <TruncatedName>{authorName}</TruncatedName>
           </Author>
           <div style={{ positive: 'relative', float: 'left' }}>
             <div data-tip="custom" data-for={dataId}>
@@ -146,7 +161,7 @@ class SkillCardGrid extends Component {
                     place="bottom"
                     effect="solid"
                     delayHide={200}
-                    border="true"
+                    border={true}
                   >
                     <Link to={{ pathname: skillFeedbackPathname }}>
                       <SkillRatingPopover stars={stars} />
@@ -171,23 +186,12 @@ class SkillCardGrid extends Component {
     });
     return cards;
   };
-
-  render() {
-    return (
-      <div
-        style={{
-          marginTop: '20px',
-          marginBottom: '40px',
-          textAlign: 'center',
-          fontSize: '0.1px',
-          width: '100%',
-        }}
-      >
-        <GridList>{this.loadSkillCards()}</GridList>
-      </div>
-    );
-  }
-}
+  return (
+    <Container>
+      <GridList>{loadSkillCards()}</GridList>
+    </Container>
+  );
+};
 
 SkillCardGrid.propTypes = {
   skills: PropTypes.array,

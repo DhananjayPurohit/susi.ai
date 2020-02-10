@@ -6,10 +6,7 @@ export const FlexContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   @media (max-width: 900px) {
-    width: 100%;
-  }
-  @media (max-width: 500px) {
-    width: 37px;
+    width: auto;
   }
 `;
 

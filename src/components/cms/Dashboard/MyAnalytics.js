@@ -17,14 +17,13 @@ const Container = styled.div`
 `;
 
 class MyAnalytics extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      skillUsage: [],
-      loading: true,
-      skillUsageCount: 0,
-    };
-  }
+  state = {
+    skillUsage: [],
+    loading: true,
+    userSkills: 0,
+    skillUsageCount: 0,
+  };
+
   componentDidMount() {
     this.loadSkillsUsage();
   }
@@ -52,56 +51,75 @@ class MyAnalytics extends Component {
 
   saveUsageData = data => {
     let skillUsageCount = 0;
-    const skillUsage = data.map(skill => {
-      let dataObject = {};
-      dataObject.skillName = skill.skillName;
-      dataObject.usageCount = skill.usageCount || 0;
-      skillUsageCount += dataObject.usageCount;
-      return dataObject;
-    });
+    let skillUsage = null;
+    if (data && Array.isArray(data) && data.length > 0) {
+      skillUsage = data.map(skill => {
+        let dataObject = {};
+        dataObject.skillName = skill.skillName;
+        dataObject.usageCount = skill.usageCount || 0;
+        skillUsageCount += dataObject.usageCount;
+        return dataObject;
+      });
+    }
     this.setState({
       skillUsage,
+      userSkills: data.length,
       skillUsageCount,
     });
   };
 
   render() {
-    let { skillUsage, loading, skillUsageCount } = this.state;
+    let { skillUsage, loading, skillUsageCount, userSkills } = this.state;
+    let noskillCreatedMessage =
+      userSkills.length > 0
+        ? ''
+        : 'Your skill has not been used, make sure to improve your skill to attract more users.';
     return (
       <div>
         {loading ? (
           <CircularLoader height={5} />
         ) : (
           <Container>
-            {skillUsageCount !== 0 && (
-              <React.Fragment>
-                <SubTitle marginLeft={1.4}>Skill Usage Distribution</SubTitle>
-                <PieChartContainer
-                  cellData={skillUsage.map((entry, index) => (
-                    <Cell
-                      key={index}
-                      fill={
-                        ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#EA4335'][
-                          index % 5
-                        ]
-                      }
-                    />
-                  ))}
-                  data={skillUsage}
-                  nameKey="skillName"
-                  dataKey="usageCount"
-                />
-              </React.Fragment>
-            )}
+            {skillUsage &&
+              Array.isArray(skillUsage) &&
+              skillUsage.length > 0 &&
+              skillUsageCount !== 0 && (
+                <React.Fragment>
+                  <SubTitle marginLeft={1.4}>Skill Usage Distribution</SubTitle>
+                  <PieChartContainer
+                    cellData={
+                      skillUsage &&
+                      Array.isArray(skillUsage) &&
+                      skillUsage.length > 0 &&
+                      skillUsage.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={
+                            [
+                              '#0088FE',
+                              '#00C49F',
+                              '#FFBB28',
+                              '#FF8042',
+                              '#EA4335',
+                            ][index % 5]
+                          }
+                        />
+                      ))
+                    }
+                    data={skillUsage}
+                    nameKey="skillName"
+                    dataKey="usageCount"
+                  />
+                </React.Fragment>
+              )}
           </Container>
         )}
-        {skillUsageCount === 0 && !loading && (
+        {skillUsageCount === 0 && noskillCreatedMessage !== '' && !loading && (
           <Container>
             <div className="center">
               <br />
-              <h2 style={{ textAlign: 'center' }}>
-                Your skill has not been used, make sure to improve your skill to
-                attract more users.
+              <h2 style={{ textAlign: 'center', padding: '5px' }}>
+                {noskillCreatedMessage}
               </h2>
               <br />
             </div>

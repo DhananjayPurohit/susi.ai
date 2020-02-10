@@ -6,6 +6,7 @@ import SearchIcon from '@material-ui/icons/Search';
 import _CloseIcon from '@material-ui/icons/Close';
 import _UpIcon from '@material-ui/icons/ExpandLess';
 import _DownIcon from '@material-ui/icons/ExpandMore';
+import ToolTip from '../shared/ToolTip';
 
 const ESCAPE_KEY = 27;
 const F_KEY = 70;
@@ -83,6 +84,7 @@ const Container = styled.div`
 `;
 
 const SearchContainer = styled.div`
+  z-index: 9999 !important;
   position: absolute;
   top: 47px;
   background: #555555;
@@ -95,10 +97,7 @@ const SearchContainer = styled.div`
 `;
 
 class ExpandingSearchField extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { isOpen: false, indexCnt: 0 };
-  }
+  state = { isOpen: false, indexCnt: 0 };
 
   closeSearch = state => {
     if (this.props.open) {
@@ -195,7 +194,9 @@ class ExpandingSearchField extends Component {
       <React.Fragment>
         <Container>
           <IconButton onClick={this.onClick}>
-            <SearchIcon />
+            <ToolTip title="Search">
+              <SearchIcon />
+            </ToolTip>
           </IconButton>
         </Container>
         {open && (

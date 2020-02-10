@@ -19,6 +19,7 @@ import UpdateSystemSettings from '../../Admin/Settings/ConfigKeys/UpdateSystemSe
 import EditSkill from '../../Admin/ListSkills/EditSkillDialog';
 import EditDevice from '../../Admin/ListDevices/EditDeviceDialog';
 import ConfirmDialog from './dialogTypes/ConfirmDialog';
+import CropDialog from './dialogTypes/CropDialog';
 import ReportSkillDialog from '../../cms/SkillPage/ReportSkillDialog';
 import EditFeedback from '../../cms/SkillFeedbackPage/EditFeedbackDialog';
 import SkillSlideshowDialog from '../../Admin/Settings/Slideshow/Dialog';
@@ -66,6 +67,7 @@ const DialogData = {
     componentProps: { entityType: 'skill' },
   },
   confirm: { Component: ConfirmDialog, size: 'xs' },
+  crop: { Component: CropDialog, size: 'xs' },
   showMessage: { Component: ConfirmDialog, size: 'sm' },
   editSkill: { Component: EditSkill, size: 'sm' },
   editDevice: { Component: EditDevice, size: 'sm' },
@@ -139,7 +141,7 @@ const DialogSection = props => {
     Component,
     fullScreen = false,
     style = {
-      padding: isMobileView() ? '0.3rem' : '1rem 1.5rem',
+      padding: isMobileView() ? '0.3rem' : '2.4rem 1.5rem',
       textAlign: 'center',
     },
     componentProps = {},

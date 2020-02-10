@@ -1,23 +1,16 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import uiActions from '../../../redux/actions/ui';
-import CircularLoader from '../../shared/CircularLoader';
 import { fetchUserRatings } from '../../../apis';
 import { parseDate } from '../../../utils';
+import { getSkillFromRating } from '../../../utils/getSkillFromRating';
 import styled from 'styled-components';
 import Ratings from 'react-ratings-declarative';
-
-const StyledTableCell = styled(TableCell)`
-  padding: 0.625rem 1.5rem;
-`;
+import MaterialTable from 'material-table';
+import TableSleleton from '../../shared/TableLoader';
 
 const TableWrap = styled.div`
   padding: 0rem 1.25rem;
@@ -28,14 +21,12 @@ const TableWrap = styled.div`
 `;
 
 class MyRatings extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      ratingsData: [],
-      loading: true,
-      showMySkills: true,
-    };
-  }
+  state = {
+    ratingsData: [],
+    loading: true,
+    showMySkills: true,
+  };
+
   componentDidMount() {
     this.loadSkills();
   }
@@ -48,13 +39,15 @@ class MyRatings extends Component {
       if (payload.ratedSkills) {
         for (let i of payload.ratedSkills) {
           let skillName = Object.keys(i)[0];
-          ratingsData.push({
+
+          let skill = {
             skillName: skillName,
             group: i[skillName].group,
             language: i[skillName].language,
             skillStar: i[skillName].stars,
             ratingTimestamp: i[skillName].timestamp,
-          });
+          };
+          ratingsData.push(skill);
         }
         this.setState({
           ratingsData,
@@ -79,68 +72,93 @@ class MyRatings extends Component {
     return (
       <div>
         {loading ? (
-          <CircularLoader height={5} />
+          <TableSleleton />
         ) : (
           <TableWrap>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Skill Name</TableCell>
-                  <TableCell>Rating</TableCell>
-                  <TableCell>Timestamp</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {ratingsData.map((skill, index) => {
-                  const {
-                    group,
-                    skillName,
-                    ratingTimestamp,
-                    skillStar,
-                  } = skill;
-                  return (
-                    <TableRow key={index}>
-                      <StyledTableCell style={{ fontSize: '1rem' }}>
-                        <Link
-                          to={{
-                            pathname: `/${group}/${skillName
-                              .toLowerCase()
-                              .replace(/ /g, '_')}/language`,
-                          }}
-                        >
-                          {(
-                            skillName.charAt(0).toUpperCase() +
-                            skillName.slice(1)
-                          ).replace(/[_-]/g, ' ')}
-                        </Link>
-                      </StyledTableCell>
-                      <StyledTableCell style={{ fontSize: '1rem' }}>
-                        <Ratings
-                          rating={skillStar}
-                          widgetRatedColors="#ffbb28"
-                          widgetDimensions="20px"
-                          widgetSpacings="0px"
-                        >
-                          <Ratings.Widget />
-                          <Ratings.Widget />
-                          <Ratings.Widget />
-                          <Ratings.Widget />
-                          <Ratings.Widget />
-                        </Ratings>
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        {parseDate(ratingTimestamp)}
-                      </StyledTableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+            {ratingsData &&
+              Array.isArray(ratingsData) &&
+              ratingsData.length > 0 && (
+                <MaterialTable
+                  title="My Rating"
+                  columns={[
+                    {
+                      title: 'Skill Name',
+                      field: 'skillName',
+                      render: rowData => {
+                        return (
+                          <Link
+                            to={{
+                              pathname: `/${rowData.group}/${getSkillFromRating(
+                                rowData.skillName,
+                              )}/${rowData.language}`,
+                            }}
+                          >
+                            {(
+                              rowData.skillName.charAt(0).toUpperCase() +
+                              rowData.skillName.slice(1)
+                            ).replace(/[_-]/g, ' ')}
+                          </Link>
+                        );
+                      },
+                    },
+                    {
+                      title: 'Rating',
+                      field: 'rating',
+                      render: rowData => {
+                        return (
+                          <Ratings
+                            rating={rowData.skillStar}
+                            widgetRatedColors="#ffbb28"
+                            widgetDimensions="20px"
+                            widgetSpacings="0px"
+                          >
+                            <Ratings.Widget />
+                            <Ratings.Widget />
+                            <Ratings.Widget />
+                            <Ratings.Widget />
+                            <Ratings.Widget />
+                          </Ratings>
+                        );
+                      },
+                    },
+                    {
+                      title: 'Timestamp',
+                      field: 'timestamp',
+                      render: rowData => {
+                        return parseDate(rowData.ratingTimestamp);
+                      },
+                    },
+                  ]}
+                  data={
+                    ratingsData &&
+                    Array.isArray(ratingsData) &&
+                    ratingsData.length > 0 &&
+                    ratingsData.map((rating, index) => {
+                      return {
+                        group: rating.group,
+                        skillName: rating.skillName,
+                        ratingTimestamp: rating.ratingTimestamp,
+                        skillStar: rating.skillStar,
+                        language: rating.language,
+                      };
+                    })
+                  }
+                  options={{
+                    search: false,
+                    toolbar: false,
+                    headerStyle: {
+                      backgroundColor: '#6fa2ff',
+                      color: '#FFF',
+                      fontSize: '1.2rem',
+                    },
+                  }}
+                />
+              )}
           </TableWrap>
         )}
         {ratingsData.length === 0 && !loading && (
           <div style={{ textAlign: 'center', paddingTop: '1rem' }}>
-            <h2>
+            <h2 style={{ padding: '5px' }}>
               You have not rated any skill, go to{' '}
               <Link to="/">SUSI Skills Explorer</Link> and rate.
             </h2>

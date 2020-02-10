@@ -11,6 +11,9 @@ import _ChevronRight from '@material-ui/icons/ChevronRight';
 import loadingGIF from '../../../../images/loading.gif';
 import MessageBubble from '../../../ChatApp/MessageListItem/MessageBubbleStyle';
 import './Chatbot.css';
+import onChatComposerKeyDown from '../../../../utils/onChatComposerKeyDown';
+
+const ENTER_KEY_CODE = 13;
 
 const Paper = styled(_Paper)`
   width: ${props => props.width};
@@ -82,7 +85,6 @@ const SUSIFrameContainer = styled.div`
     props.width > 1200 ? props.height - 250 + 'px' : '630px'};
   width: 100%;
   animation: ${moveFromBottomFadeKeyframe} 0.3s ease both;
-
   media(max-width: 667px) {
     left: 0;
     right: 0;
@@ -103,8 +105,8 @@ const SUSIFrameWrapper = styled.div`
 
 const SUSIMessageContainer = styled.div`
   && {
-    background-color: ${props => props.backgroundColor};
-    background-image: ${props => `url(${props.backgroundImage})`};
+    background-color: ${props => props.$backgroundColor};
+    background-image: ${props => `url(${props.$backgroundImage})`};
   }
 `;
 
@@ -151,8 +153,8 @@ const SUSILauncherWrapper = styled.div`
 `;
 
 const SUSILauncherButton = styled.div`
-  background-color: ${props => props.backgroundColor};
-  background-image: ${props => `url(${props.backgroundImage})`};
+  background-color: ${props => props.$backgroundColor};
+  background-image: ${props => `url(${props.$backgroundImage})`};
   width: 60px;
   height: 60px;
   background-size: 60px;
@@ -193,7 +195,6 @@ const SUSICommentContent = styled.div`
 const H1 = styled.h1`
   margin: 0px;
   text-align: center;
-
   @media (max-width: 769px) {
     padding-top: 0rem;
   }
@@ -236,22 +237,30 @@ const Textarea = styled.textarea`
 `;
 
 class Preview extends Component {
-  constructor() {
-    super();
-    this.msgNumber = 1;
-    this.state = {
-      messages: [{ message: 'Hi, I am SUSI', author: 'SUSI', loading: false }],
-      message: '',
-      previewChat: true,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-  }
+  messageEndRef = React.createRef();
+  msgNumber = 1;
+  state = {
+    messages: [{ message: 'Hi, I am SUSI', author: 'SUSI', loading: false }],
+    message: '',
+    previewChat: true,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    messageHistory: [],
+    showMessage: false,
+    currentMessageIndex: -1,
+  };
 
   componentDidMount = () => {
     this.updateWindowDimensions();
+    this.scrollToBottom();
     window.addEventListener('resize', this.updateWindowDimensions);
   };
+
+  componentDidUpdate() {
+    if (this.messageEndRef.current) {
+      this.scrollToBottom();
+    }
+  }
 
   togglePreview = () => {
     this.setState(prevState => ({
@@ -260,9 +269,14 @@ class Preview extends Component {
   };
 
   sendMessage = async event => {
-    const { message } = this.state;
+    const { message, messageHistory } = this.state;
     const { code } = this.props;
     if (message.trim().length > 0) {
+      this.setState({
+        messageHistory: [message, ...messageHistory],
+        showMessage: true,
+        currentMessageIndex: -1,
+      });
       this.addMessage(message, 'You');
       const encodedMessage = encodeURIComponent(message);
       const encodedCode = encodeURIComponent(code);
@@ -308,6 +322,28 @@ class Preview extends Component {
     }
   };
 
+  onKeydown = event => {
+    if (event.keyCode === ENTER_KEY_CODE) {
+      event.preventDefault();
+      this.sendMessage();
+      this.setState({ message: '' });
+    } else {
+      const { messageHistory, currentMessageIndex } = this.state;
+      const { message, newMessageIndex } = onChatComposerKeyDown(
+        event.keyCode,
+        messageHistory,
+        currentMessageIndex,
+      );
+      if (message !== '') {
+        event.preventDefault();
+        this.setState({
+          message: message,
+          currentMessageIndex: newMessageIndex,
+        });
+      }
+    }
+  };
+
   addMessage = (message, author, loading = false) => {
     const messageObj = { message, author, loading };
     const loadingObj = {
@@ -335,9 +371,8 @@ class Preview extends Component {
   };
 
   // Scroll to the bottom
-  scrollToBottomOfResults = () => {
-    var textsDiv = document.querySelector('.susi-sheet-content');
-    textsDiv.scrollTop = textsDiv.scrollHeight;
+  scrollToBottom = () => {
+    this.messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
   };
 
   componentWillUnmount = () => {
@@ -368,14 +403,14 @@ class Preview extends Component {
       paperWidth,
     } = this.props;
     let renderMessages = null;
-    if (messages.length) {
+    if (messages && Array.isArray(messages) && messages.length > 0) {
       renderMessages = messages.map((message, index) => {
         if (message.author === 'You') {
           return (
             <MessageBubble
               author={message.author}
               width={'fit-content'}
-              backgroundColor={botbuilderUserMessageBackground}
+              $backgroundColor={botbuilderUserMessageBackground}
               color={botbuilderUserMessageTextColor}
             >
               <SUSICommentContent>{message.message}</SUSICommentContent>
@@ -387,7 +422,7 @@ class Preview extends Component {
             key={index}
             author={message.author}
             width={'fit-content'}
-            backgroundColor={botbuilderBotMessageBackground}
+            $backgroundColor={botbuilderBotMessageBackground}
             color={botbuilderBotMessageTextColor}
           >
             <SUSICommentContent>{message.message}</SUSICommentContent>
@@ -425,8 +460,8 @@ class Preview extends Component {
                         >
                           <SUSIMessageContainer
                             className="susi-sheet-content-container"
-                            backgroundColor={botbuilderBackgroundBody}
-                            backgroundImage={botbuilderBodyBackgroundImg}
+                            $backgroundColor={botbuilderBackgroundBody}
+                            $backgroundImage={botbuilderBodyBackgroundImg}
                           >
                             <div
                               className="susi-conversation-parts-container"
@@ -437,6 +472,7 @@ class Preview extends Component {
                                 className="susi-conversation-parts"
                               >
                                 {renderMessages}
+                                <div ref={this.messageEndRef} />
                               </div>
                             </div>
                           </SUSIMessageContainer>
@@ -461,7 +497,7 @@ class Preview extends Component {
                                     rows="1"
                                     value={message}
                                     onKeyPress={event => {
-                                      if (event.which === 13) {
+                                      if (event.which === ENTER_KEY_CODE) {
                                         event.preventDefault();
                                       }
                                     }}
@@ -471,9 +507,7 @@ class Preview extends Component {
                                       })
                                     }
                                     onKeyDown={event => {
-                                      if (event.keyCode === 13) {
-                                        this.sendMessage();
-                                      }
+                                      this.onKeydown(event);
                                     }}
                                   />
                                   <div>
@@ -497,8 +531,8 @@ class Preview extends Component {
                 <SUSILauncherWrapper onClick={this.togglePreview}>
                   <SUSILauncherButton
                     data-tip="Toggle Launcher"
-                    backgroundColor={botbuilderIconColor}
-                    backgroundImage={botbuilderIconImg}
+                    $backgroundColor={botbuilderIconColor}
+                    $backgroundImage={botbuilderIconImg}
                   />
                 </SUSILauncherWrapper>
               </SUSILauncherContainer>

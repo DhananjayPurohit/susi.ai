@@ -105,15 +105,19 @@ class SignUp extends Component {
   isEmailAvailable = async () => {
     const { email, emailErrorMessage } = this.state;
     if (!emailErrorMessage) {
-      let payload = await getEmailExists({
-        email,
-      });
-      const { exists } = payload;
-      this.setState({
-        emailErrorMessage: exists
-          ? 'Email ID already taken, please use another account'
-          : '',
-      });
+      try {
+        let payload = await getEmailExists({
+          email,
+        });
+        const { exists } = payload;
+        this.setState({
+          emailErrorMessage: exists
+            ? 'Email ID already taken, please use another account'
+            : '',
+        });
+      } catch (error) {
+        console.log(error);
+      }
     }
   };
 
@@ -138,17 +142,21 @@ class SignUp extends Component {
         const password = event.target.value.trim();
         const passwordScore = zxcvbn(password).score;
         const strength = ['Worst', 'Bad', 'Weak', 'Good', 'Strong'];
-        const passwordError = !isPassword(password);
+        const passwordError = isPassword(password);
         const passwordConfirmError =
           (confirmPassword || passwordConfirmErrorMessage) &&
           !(confirmPassword === password);
         this.setState({
           password,
-          passwordErrorMessage: passwordError
-            ? 'Atleast 8 characters, 1 special character, number, 1 capital letter'
-            : '',
-          passwordScore: passwordError ? -1 : passwordScore,
-          passwordStrength: passwordError ? '' : strength[passwordScore],
+          passwordErrorMessage: passwordError.errorStatus ? (
+            <Translate text={passwordError.message} />
+          ) : (
+            ''
+          ),
+          passwordScore: passwordError.errorStatus ? -1 : passwordScore,
+          passwordStrength: passwordError.errorStatus
+            ? ''
+            : strength[passwordScore],
           passwordConfirmErrorMessage: passwordConfirmError
             ? 'Password does not match'
             : '',
@@ -181,7 +189,7 @@ class SignUp extends Component {
       signupErrorMessage: '',
     });
 
-    const {
+    let {
       email,
       password,
       emailErrorMessage,
@@ -189,6 +197,8 @@ class SignUp extends Component {
       isCaptchaVerified,
       captchaResponse,
     } = this.state;
+
+    email = email.toLowerCase().trim();
 
     const { getSignup, openSnackBar } = this.props.actions;
 
@@ -287,7 +297,7 @@ class SignUp extends Component {
           <CloseButton onClick={this.handleDialogClose} />
         </DialogTitle>
         <DialogContent>
-          <FormControl error={emailErrorMessage !== ''}>
+          <FormControl error={emailErrorMessage !== ''} disabled={loading}>
             <OutlinedInput
               labelWidth={0}
               name="email"
@@ -302,7 +312,7 @@ class SignUp extends Component {
               {emailErrorMessage}
             </FormHelperText>
           </FormControl>
-          <FormControl error={passwordErrorMessage !== ''}>
+          <FormControl error={passwordErrorMessage !== ''} disabled={loading}>
             <PasswordField
               name="password"
               value={password}
@@ -318,7 +328,10 @@ class SignUp extends Component {
             <PasswordStrengthBar score={passwordScore} />
             <span>{passwordStrength}</span>
           </div>
-          <FormControl error={passwordConfirmErrorMessage !== ''}>
+          <FormControl
+            error={passwordConfirmErrorMessage !== ''}
+            disabled={loading}
+          >
             <PasswordField
               name="confirmPassword"
               value={confirmPassword}

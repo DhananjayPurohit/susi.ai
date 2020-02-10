@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CloseButton from '../../shared/CloseButton';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import { connect } from 'react-redux';
@@ -49,15 +49,12 @@ class ConfirmDeleteAccount extends React.Component {
     email: PropTypes.string,
     history: PropTypes.object,
   };
-  constructor(props) {
-    super(props);
-    this.state = {
-      confirmed: false,
-      emailError: '',
-      emailInput: '',
-      loading: false,
-    };
-  }
+  state = {
+    confirmed: false,
+    emailError: '',
+    emailInput: '',
+    loading: false,
+  };
 
   handleClose = event => {
     this.props.actions.closeModal();
@@ -90,8 +87,10 @@ class ConfirmDeleteAccount extends React.Component {
   };
 
   handleEmailChange = event => {
-    const { email } = this.props;
-    const { value } = event.target;
+    let { email } = this.props;
+    email = email.toLowerCase().trim();
+    let { value } = event.target;
+    value = value.toLowerCase();
     const emailError = !(email === value);
     if (emailError) {
       this.emailErrorMessage = 'Email does not match';
@@ -123,7 +122,7 @@ class ConfirmDeleteAccount extends React.Component {
             <br />
             <strong>Please type in your email id to confirm.</strong>
           </DialogContentText>
-          <FormControl error={this.emailErrorMessage !== ''}>
+          <FormControl error={this.emailErrorMessage !== ''} disabled={loading}>
             <OutlinedInput
               name="email"
               value={emailInput}

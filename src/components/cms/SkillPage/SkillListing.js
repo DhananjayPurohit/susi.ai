@@ -19,7 +19,6 @@ import Fab from '@material-ui/core/Fab';
 import Ratings from 'react-ratings-declarative';
 import { reportSkill } from '../../../apis';
 import { CenterReaderContainer } from '../../shared/Container';
-import ScrollTopButton from '../../shared/ScrollTopButton';
 import { StaffPickBadge } from '../../shared/Badges';
 
 // Static Assets
@@ -27,15 +26,12 @@ import CircleImage from '../../shared/CircleImage';
 import EditBtn from '@material-ui/icons/Edit';
 import VersionBtn from '@material-ui/icons/History';
 import DeleteBtn from '@material-ui/icons/Delete';
-import _NavigateDown from '@material-ui/icons/ExpandMore';
-import _NavigateUp from '@material-ui/icons/ExpandLess';
 import ReactTooltip from 'react-tooltip';
 import { parseDate } from '../../../utils';
 import getImageSrc from '../../../utils/getImageSrc';
-import styled, { css } from 'styled-components';
+import styled from 'styled-components';
 import CircularLoader from '../../shared/CircularLoader';
 import SkillExampleBubble from '../../shared/SkillExampleBubble';
-import Button from '@material-ui/core/Button';
 
 const SingleRating = styled.div`
   display: flex;
@@ -57,22 +53,6 @@ const Paper = styled(_Paper)`
   width: 100%;
 `;
 
-const ArrowExampleIconStyle = css`
-  position: relative;
-  bottom: 3px;
-  fill: #4285f4;
-  width: 0.75rem;
-  margin-top: 4px;
-`;
-
-const NavigateUp = styled(_NavigateUp)`
-  ${ArrowExampleIconStyle};
-`;
-
-const NavigateDown = styled(_NavigateDown)`
-  ${ArrowExampleIconStyle};
-`;
-
 const ExampleWrapper = styled.div`
   width: 55%;
   display: flex;
@@ -87,12 +67,6 @@ const ExampleContainer = styled.div`
     display: flex;
     min-height: 0px;
   }
-`;
-
-const MoreExamplesButton = styled(Button)`
-  margin-top: 0.5rem;
-  padding: 0px 0.5rem;
-  height: 2.75rem;
 `;
 
 const SkillImage = styled.img.attrs({
@@ -134,41 +108,30 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const CenterContainer = styled.div`
-  display: flex;
-  justify-content: space-around;
-`;
-
 class SkillListing extends Component {
-  constructor(props) {
-    super(props);
+  state = {
+    skillFeedback: [],
+    feedbackMessage: '',
+  };
 
-    this.state = {
-      skillFeedback: [],
-      feedbackMessage: '',
-      skillExampleCount: 4,
-      seeMoreSkillExamples: true,
-    };
-
-    this.groupValue = this.props.location.pathname.split('/')[1];
-    this.skillTag = this.props.location.pathname.split('/')[2];
-    this.languageValue = this.props.location.pathname.split('/')[3];
-    this.skillData = {
-      model: 'general',
-      group: this.groupValue,
-      language: this.languageValue,
-      skill: this.skillTag,
-    };
-    this.skillName = this.skillTag
-      ? this.skillTag
-          .split('_')
-          .map(data => {
-            const s = data.charAt(0).toUpperCase() + data.substring(1);
-            return s;
-          })
-          .join(' ')
-      : '';
-  }
+  groupValue = this.props.location.pathname.split('/')[1];
+  skillTag = this.props.location.pathname.split('/')[2];
+  languageValue = this.props.location.pathname.split('/')[3];
+  skillData = {
+    model: 'general',
+    group: this.groupValue,
+    language: this.languageValue,
+    skill: this.skillTag,
+  };
+  skillName = this.skillTag
+    ? this.skillTag
+        .split('_')
+        .map(data => {
+          const s = data.charAt(0).toUpperCase() + data.substring(1);
+          return s;
+        })
+        .join(' ')
+    : '';
 
   componentDidMount() {
     document.title = `SUSI.AI - ${this.skillName} Skills`;
@@ -269,19 +232,7 @@ class SkillListing extends Component {
     }
   };
 
-  toggleSkillExamples = () => {
-    this.setState(prevState => ({
-      seeMoreSkillExamples: !prevState.seeMoreSkillExamples,
-      skillExampleCount:
-        prevState.skillExampleCount === 4
-          ? prevState.examples && prevState.examples.length
-          : 4,
-    }));
-  };
-
   render() {
-    const { skillExampleCount } = this.state;
-
     const {
       image,
       author,
@@ -311,24 +262,11 @@ class SkillListing extends Component {
 
     const skillName = _skillName === null ? 'No Name Given' : _skillName;
 
-    let { seeMoreSkillExamples } = this.state;
     const editLink = `/${this.groupValue}/${this.skillTag}/edit/${this.languageValue}`;
     const versionsLink = `/${this.groupValue}/${this.skillTag}/versions/${this.languageValue}`;
 
     let renderElement = null;
-    if (examples.length > 4) {
-      seeMoreSkillExamples = seeMoreSkillExamples ? (
-        <MoreExamplesButton variant="contained" color="primary">
-          <p style={{ fontSize: '0.75rem' }}>See more examples</p>
-          <NavigateDown style={{ fill: '#fff' }} />
-        </MoreExamplesButton>
-      ) : (
-        <MoreExamplesButton variant="contained" color="primary">
-          <p style={{ fontSize: '0.75rem' }}>Less</p>
-          <NavigateUp style={{ fill: '#fff' }} />
-        </MoreExamplesButton>
-      );
-    }
+
     if (loadingSkill === true) {
       renderElement = <CircularLoader />;
     } else {
@@ -412,7 +350,7 @@ class SkillListing extends Component {
             <ExampleWrapper>
               {examples &&
                 examples[Object.keys(examples)[0]] &&
-                examples.slice(0, skillExampleCount).map((data, index) => {
+                examples.map((data, index) => {
                   return (
                     <SkillExampleBubble
                       key={index}
@@ -422,9 +360,6 @@ class SkillListing extends Component {
                     />
                   );
                 })}
-              <CenterContainer onClick={this.toggleSkillExamples}>
-                {seeMoreSkillExamples}
-              </CenterContainer>
             </ExampleWrapper>
           </ExampleContainer>
           <Paper>
@@ -480,20 +415,23 @@ class SkillListing extends Component {
                 <tr>
                   <td>Languages supported:</td>
                   <td>
-                    {supportedLanguages.map((data, index) => {
-                      const delimiter =
-                        supportedLanguages.length === index + 1 ? null : ', ';
-                      return (
-                        <Link
-                          key={index}
-                          onClick={this.forceUpdate}
-                          to={`/${this.groupValue}/${data.name}/${data.language}`}
-                        >
-                          {ISO6391.getNativeName(data.language)}
-                          {delimiter}
-                        </Link>
-                      );
-                    })}
+                    {supportedLanguages &&
+                      Array.isArray(supportedLanguages) &&
+                      supportedLanguages.length > 0 &&
+                      supportedLanguages.map((data, index) => {
+                        const delimiter =
+                          supportedLanguages.length === index + 1 ? null : ', ';
+                        return (
+                          <Link
+                            key={index}
+                            onClick={this.forceUpdate}
+                            to={`/${this.groupValue}/${data.name}/${data.language}`}
+                          >
+                            {ISO6391.getNativeName(data.language)}
+                            {delimiter}
+                          </Link>
+                        );
+                      })}
                   </td>
                 </tr>
                 {accessToken && (
@@ -519,7 +457,6 @@ class SkillListing extends Component {
           <SkillRatingCard />
           <SkillFeedbackCard />
           <SkillUsageCard />
-          <ScrollTopButton />
         </Container>
       );
     }

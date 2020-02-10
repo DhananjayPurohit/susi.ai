@@ -272,9 +272,18 @@ class SkillFeedbackPage extends Component {
   async componentDidMount() {
     const { actions } = this.props;
     actions.getSkillMetaData(this.skillData);
-    await actions.getSkillFeedbacks(this.skillData);
-    this.setState({ loading: false });
-    this.gotoPage(1);
+    try {
+      await actions.getSkillFeedbacks(this.skillData);
+      this.setState({ loading: false });
+      this.gotoPage(1);
+    } catch (error) {
+      this.setState({ loading: false });
+      actions.openSnackBar({
+        snackBarMessage: 'Failed to fetch skill feedbacks',
+        snackBarDuration: 2000,
+      });
+      console.log(error);
+    }
   }
 
   onPageChanged = data => {
@@ -327,14 +336,16 @@ class SkillFeedbackPage extends Component {
     });
   };
 
-  handleEditModal = () => {
-    this.props.actions.openModal({
-      modalType: 'editFeedback',
-      handleConfirm: this.postFeedback,
-      handleClose: this.props.actions.closeModal,
-      errorText: this.state.errorText,
-      feedback: this.state.feedbackValue,
-      handleEditFeedback: this.editFeedback,
+  handleEditModal = previousFeedback => {
+    this.setState({ feedbackValue: previousFeedback }, () => {
+      this.props.actions.openModal({
+        modalType: 'editFeedback',
+        handleConfirm: this.postFeedback,
+        handleClose: this.props.actions.closeModal,
+        errorText: this.state.errorText,
+        feedback: this.state.feedbackValue,
+        handleEditFeedback: this.editFeedback,
+      });
     });
   };
 
@@ -464,7 +475,11 @@ class SkillFeedbackPage extends Component {
                   open={open}
                   onClose={this.handleMenuClose}
                 >
-                  <MenuItem onClick={this.handleEditModal}>
+                  <MenuItem
+                    onClick={() => {
+                      this.handleEditModal(userFeedback.feedback);
+                    }}
+                  >
                     <ListItemIcon>
                       <EditBtn />
                     </ListItemIcon>
@@ -547,11 +562,10 @@ class SkillFeedbackPage extends Component {
                   label="Post"
                   color="primary"
                   variant="contained"
-                  onClick={this.postFeedback}
+                  handleClick={this.postFeedback}
                   style={{ marginBottom: '1em' }}
-                >
-                  Post
-                </Button>
+                  buttonText="Post"
+                />
               </Timestamp>
             </div>
           </div>
@@ -625,32 +639,33 @@ class SkillFeedbackPage extends Component {
                         ← Previous
                       </NavigateButton>
                     </NavigateButtonWrapper>
-                    {pages.map((page, index) => {
-                      if (page === LEFT_PAGE) {
+                    {pages &&
+                      pages.map((page, index) => {
+                        if (page === LEFT_PAGE) {
+                          return (
+                            <DottedNavigation key={index}>
+                              <DotLink>...</DotLink>
+                            </DottedNavigation>
+                          );
+                        }
+                        if (page === RIGHT_PAGE) {
+                          return (
+                            <DottedNavigation key={index}>
+                              <DotLink>...</DotLink>
+                            </DottedNavigation>
+                          );
+                        }
                         return (
-                          <DottedNavigation key={index}>
-                            <DotLink>...</DotLink>
-                          </DottedNavigation>
+                          <PageLinkContainer key={index}>
+                            <PageLink
+                              status={currentPage === page ? 'active' : ''}
+                              onClick={this.handleClick(page)}
+                            >
+                              {page}
+                            </PageLink>
+                          </PageLinkContainer>
                         );
-                      }
-                      if (page === RIGHT_PAGE) {
-                        return (
-                          <DottedNavigation key={index}>
-                            <DotLink>...</DotLink>
-                          </DottedNavigation>
-                        );
-                      }
-                      return (
-                        <PageLinkContainer key={index}>
-                          <PageLink
-                            status={currentPage === page ? 'active' : ''}
-                            onClick={this.handleClick(page)}
-                          >
-                            {page}
-                          </PageLink>
-                        </PageLinkContainer>
-                      );
-                    })}
+                      })}
                     <NavigateButtonWrapper
                       onClick={this.handleMoveRight}
                       status={
